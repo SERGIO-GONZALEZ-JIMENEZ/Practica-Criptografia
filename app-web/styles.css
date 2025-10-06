@@ -1,0 +1,61 @@
+:root {
+    --primary-color: #2563EB;
+    --secondary-color: #7C3AED;
+    --tertiary-color: #e2d5fa;
+    --accent: #7ef85c;
+    --background-color: #ffffff;
+    --text-color: #050315;
+    --grey-color: #ede7fc;
+    --blue-logo-color: #2d54ac;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    width: 100vw;
+    min-height: 100vh;
+    justify-content: center;
+    align-items: center;
+}
+
+main {
+    display: flex;
+    width: 50%;
+    height: 70%;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem 0 4rem 0;
+
+}
+
+button,
+input {
+    padding: 1rem;
+}
+
+button {
+    cursor: pointer;
+    background-color: var(--blue-logo-color);
+    border: 2px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+}
+
+.button-row {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+#logo-img {
+    max-width: 300px;
+}
