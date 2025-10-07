@@ -7,11 +7,18 @@
     --text-color: #050315;
     --grey-color: #ede7fc;
     --blue-logo-color: #2d54ac;
+    --font-family: 'Inter', Arial;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url(public/fonts/Inter-VariableFont_opsz\,wght.ttf);
 }
 
 * {
     margin: 0;
     padding: 0;
+    font-family: var(--font-family);
 }
 
 body {
@@ -41,6 +48,7 @@ button {
     cursor: pointer;
     background-color: var(--blue-logo-color);
     border: 2px;
+    color: var(--background-color);
 }
 
 .form {
@@ -54,6 +62,7 @@ button {
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
+    justify-content: space-between;
 }
 
 #logo-img {
