@@ -21,6 +21,8 @@ class SList:
             self.head = new_node
         else:
             current = self.head
+            if current is None:
+                return
             while current.next:
                 current = current.next
             current.next = new_node
@@ -32,8 +34,11 @@ class SList:
                 self.head = None
             else:
                 current = self.head
+                if current is None:
+                    return
                 while current.next and current.next.next:
                     current = current.next
                 current.next = None
             self.size -= 1
+
         
