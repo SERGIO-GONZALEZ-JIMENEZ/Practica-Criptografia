@@ -13,7 +13,6 @@ function validate_form() {
     const name = $("#user").val().trim()
     const password = $("password").val().trim()
 
-
 }
 
 $(document).ready(function () {
