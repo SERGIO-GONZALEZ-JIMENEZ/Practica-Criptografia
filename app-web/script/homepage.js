@@ -1,30 +1,31 @@
 //require('dotenv').config();
 
-const SUPABASE_URL = 'https://cdulvsxglpepjvgkrcmq.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkdWx2c3hnbHBlcGp2Z2tyY21xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNTc4MTksImV4cCI6MjA3NjYzMzgxOX0.MJ1on3Q_qsUViqY3QziTGFNgndHUcWBGOdaNLyret7E'; 
-
-// Creamos cliente de Supabase
-const {createClient} = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-
 async function db_login(email, password) {
-    // Login to the database
     try {
-        const {data, error} = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
+        // Llamar a servidor localhost:3000
+        const respuesta = await fetch('http://localhost:3000/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({email: email,  password: password})
         });
 
-        if (error) {
-            throw error;
-        }
+        // Respuesta del servidor
+        const data = await respuesta.json();
         
+        if (!respuesta.ok) {
+            throw new Error(data.error || 'Error en el login');
+        }
+
         // Successful login
         console.log('Login successful:', data);
-        localStorage.setItem('token', data.session.access_token);
+        localStorage.setItem('token', data.token);
+        //alert('Login exitoso');
 
     } catch (error) {
-        console.error('Error during login:', error);
+        console.error('Error during login:', error.message);
+        //alert(error.message);
     }
 
 }
@@ -32,28 +33,41 @@ async function db_login(email, password) {
 async function db_register(email, password) {
     // Register to the database
     try {
-        const { data, error } = await supabaseClient.auth.signUp({
-            email: email,
-            password: password
+        // Llamar a servidor localhost:3000
+        const respuesta = await fetch('http://localhost:3000/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({email: email,  password: password})
         });
 
-        if (error) {
-            throw error; 
+        // Respuesta del servidor
+        const data = await respuesta.json();
+        
+        if (!respuesta.ok) {
+            throw new Error(data.error || 'Error en el register');
         }
 
         // Successful registration
         console.log('Register successful:', data);
+        //alert(data.message);
 
     } catch (error) {
-        console.error('Error during registration:', error.message);
+        console.error('Error durante el registro:', error.message);
+        //alert(error.message);
     }
 }
 
 $(document).ready(function () {
+
+    console.log("JQuery y homepage.js cargados");
+
     $('#login').on('click', function (e) {
         e.preventDefault();
 
-        console.log("Button clicked");
+        console.log("Botón login pulsado");
+
         const name = $("#user").val().trim()
         const password = $("#password").val().trim()
 
@@ -62,7 +76,7 @@ $(document).ready(function () {
 
     $('#register').on('click', function(e) {
         e.preventDefault();
-        console.log("Botón 'Registrar' clickado.");
+        console.log("Botón register pulsado");
 
         const name = $("#user").val().trim()
         const password = $("#password").val().trim()
