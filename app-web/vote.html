@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Civium — Votación</title>
+    <link rel="stylesheet" href="style/vote.css" />
+    <link rel="icon" href="public/images/Logo_icon.ico" sizes="any" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img src="public/images/Logo.png" alt="Civium" class="logo" />
+        <div class="brand-text">
+          <span class="brand-name">Civium</span>
+          <span class="brand-sub">Voto Electrónico Seguro</span>
+        </div>
+      </div>
+
+      <div class="user-area" id="user-area" aria-live="polite">
+        <button id="logout" class="btn user-btn">Invitado ▾</button>
+      </div>
+    </header>
+
+    <main class="container" id="main">
+      <aside class="panel info-panel" aria-label="Información de votación">
+        <section class="instructions">
+          <h2>Instrucciones</h2>
+          <p>
+            Selecciona un candidato y confirma tu voto. Una vez confirmado, no
+            podrás modificarlo.
+          </p>
+        </section>
+
+        <section class="vote-status-block">
+          <h3>Estado del voto</h3>
+          <div class="status-cards">
+            <div class="status-item">
+              <span class="label">Estado</span>
+              <span id="vote-status" class="value status">Sin votar</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Elección</span>
+              <span id="chosen-name" class="value choice">—</span>
+            </div>
+          </div>
+          <div class="helpers">
+            <button id="view-results" class="btn primary">
+              Ver resultados
+            </button>
+            <button id="verify-proof" class="btn ghost">
+              Obtener comprobante
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="panel ballot-panel" aria-label="Lista de candidatos">
+        <h1>Votar — Elección 2025</h1>
+        <p class="lead">
+          Selecciona un candidato. Pulsa confirmar para enviar tu voto.
+        </p>
+
+        <div class="search-row">
+          <input
+            id="filter"
+            type="search"
+            placeholder="Buscar candidato..."
+            aria-label="Buscar candidato"
+          />
+        </div>
+
+        <div
+          id="candidates"
+          class="grid"
+          role="list"
+          aria-label="Candidatos"
+        ></div>
+
+        <div class="actions">
+          <button id="confirm" class="btn primary" disabled>
+            Confirmar voto
+          </button>
+          <button id="clear" class="btn ghost">Limpiar selección</button>
+        </div>
+
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <div
+      id="modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="modal-card" role="document">
+        <h3>Confirmar voto</h3>
+        <p>Vas a votar por:</p>
+        <p class="modal-candidate" id="modal-candidate">—</p>
+        <div class="modal-actions">
+          <button id="modal-cancel" class="btn ghost">Cancelar</button>
+          <button id="modal-send" class="btn primary">Enviar voto</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <small
+        >© 2025 Civium — Sistema de Votación Electrónica. Proyecto académico
+        para demostración de voto seguro y verificable. Todos los derechos
+        reservados.</small
+      >
+    </footer>
+
+    <script src="script/vote.js"></script>
+  </body>
+</html>
