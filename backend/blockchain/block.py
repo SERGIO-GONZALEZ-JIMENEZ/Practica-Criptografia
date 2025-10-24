@@ -4,11 +4,11 @@ from time import timezone
 import json
 
 class Block:
-    def __init__(self, index, previous_hash, vote):
+    def __init__(self, index:int, votes:list, previous_hash: str):
         self.__index = index
+        self.__votes = votes
         self.__previous_hash = previous_hash
         self.__timestamp = datetime.timestamp(datetime.now(datetime.timezone.utc))
-        self.__vote = vote
         self.__hash = self.__calculate_hash()
 
     
@@ -31,8 +31,7 @@ class Block:
 
     def __calculate_hash(self):
         """
-        Calcula el hash SHA-256 del contenido del bloque
-        (excepto el propio hash, para evitar bucle).
+        Uses the block's attributes to calculate its hash
         """
         block_data = {
             "index": self.__index,
@@ -40,7 +39,6 @@ class Block:
             "timestamp": self.__timestamp,
             "vote": self.__votes
         }
-        # Convertimos el bloque a JSON ordenado y calculamos su hash
         encoded = json.dumps(block_data, sort_keys=True).encode()
         return hashlib.sha256(encoded).hexdigest()
     

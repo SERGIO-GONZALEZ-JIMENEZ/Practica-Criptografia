@@ -3,7 +3,7 @@
 async function db_login(email, password) {
     try {
         // Llamar a servidor localhost:3000
-        const respuesta = await fetch('http://localhost:3000/login', {
+        const answer = await fetch('http://localhost:3000/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -12,9 +12,9 @@ async function db_login(email, password) {
         });
 
         // Respuesta del servidor
-        const data = await respuesta.json();
+        const data = await answer.json();
         
-        if (!respuesta.ok) {
+        if (!answer.ok) {
             throw new Error(data.error || 'Error en el login');
         }
 
@@ -34,7 +34,7 @@ async function db_register(email, password) {
     // Register to the database
     try {
         // Llamar a servidor localhost:3000
-        const respuesta = await fetch('http://localhost:3000/register', {
+        const answer = await fetch('http://localhost:3000/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -43,9 +43,9 @@ async function db_register(email, password) {
         });
 
         // Respuesta del servidor
-        const data = await respuesta.json();
+        const data = await answer.json();
         
-        if (!respuesta.ok) {
+        if (!answer.ok) {
             throw new Error(data.error || 'Error en el register');
         }
 
