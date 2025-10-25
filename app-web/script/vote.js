@@ -1,21 +1,4 @@
-// --- Datos simulados ---
-const candidates = [
-  { id: 1, name: "Ana López", party: "Futuro Verde", color: "#16a34a" },
-  { id: 2, name: "Carlos Pérez", party: "Innovación Ciudadana", color: "#2563eb" },
-  { id: 3, name: "Lucía Torres", party: "Unión Democrática", color: "#9333ea" },
-  { id: 4, name: "Miguel García", party: "Avance Popular", color: "#f59e0b" },
-  { id: 5, name: "Sara Fernández", party: "Renovación Cívica", color: "#e11d48" },
-  { id: 6, name: "Javier Soto", party: "Movimiento Solidario", color: "#0d9488" },
-  { id: 7, name: "Paula Martín", party: "Nuevo Horizonte", color: "#7c3aed" },
-  { id: 8, name: "Andrés Ramírez", party: "Fuerza del Pueblo", color: "#64748b" },
-  { id: 9, name: "Elena Ríos", party: "Avanzar Juntos", color: "#0284c7" },
-  { id: 10, name: "Diego Navarro", party: "Compromiso Social", color: "#ca8a04" }
-];
-
-let selectedCandidate = null;
-let voteSubmitted = false;
-
-// --- Elementos del DOM ---
+// --- Elementos del DOM (igual que antes) ---
 const candidateList = document.getElementById("candidates");
 const statusEl = document.getElementById("vote-status");
 const choiceEl = document.getElementById("chosen-name");
@@ -25,29 +8,36 @@ const receiptBtn = document.getElementById("verify-proof");
 const logoutBtn = document.getElementById("logout");
 const filterInput = document.getElementById("filter");
 
-// --- Renderizar candidatos ---
+// --- Variables Globales ---
+let candidates = []; // Esta lista se rellenará desde el servidor
+let selectedCandidate = null;
+let voteSubmitted = false; // (Deberías comprobar esto también en el servidor)
+
+// --- Renderizar candidatos (casi igual) ---
 function renderCandidates(filter = "") {
-  candidateList.innerHTML = ""; // limpiar contenedor
+  candidateList.innerHTML = "";
   const lowerFilter = filter.toLowerCase();
 
   candidates
     .filter(c =>
-      c.name.toLowerCase().includes(lowerFilter) ||
+      // Asumimos que la tabla 'candidate' tiene 'full_name' y 'party'
+      c.full_name.toLowerCase().includes(lowerFilter) || 
       c.party.toLowerCase().includes(lowerFilter)
     )
     .forEach((c) => {
       const card = document.createElement("div");
-      card.classList.add("candidate"); 
+      card.classList.add("candidate");
       card.innerHTML = `
         <div class="candidate-head">
-          <div class="avatar" style="background-color:${c.color}">${c.name[0]}</div>
+          <div class="avatar" style="background-color:${c.color || '#64748b'}">${c.full_name[0]}</div>
           <div>
-            <div class="candidate-name">${c.name}</div>
+            <div class="candidate-name">${c.full_name}</div>
             <div class="candidate-party">${c.party}</div>
           </div>
         </div>
       `;
-      card.onclick = () => selectCandidate(c, card);
+      // Pasamos el objeto 'c' completo
+      card.onclick = () => selectCandidate(c, card); 
       if (selectedCandidate && selectedCandidate.id === c.id) {
         card.classList.add("selected");
       }
@@ -55,7 +45,7 @@ function renderCandidates(filter = "") {
     });
 }
 
-// --- Seleccionar candidato ---
+// --- Seleccionar candidato (casi igual) ---
 function selectCandidate(candidate, card) {
   if (voteSubmitted) return;
 
@@ -63,69 +53,118 @@ function selectCandidate(candidate, card) {
   card.classList.add("selected");
 
   selectedCandidate = candidate;
-  choiceEl.textContent = candidate.name;
-  choiceEl.style.backgroundColor = candidate.color;
+  choiceEl.textContent = candidate.full_name;
+  choiceEl.style.backgroundColor = candidate.color || '#64748b';
   statusEl.textContent = "Listo para enviar voto";
+  statusEl.style.backgroundColor = ""; // Limpia el color de fondo
   statusEl.style.color = "#7C3AED";
   voteBtn.disabled = false;
 }
 
-// --- Confirmar voto ---
-voteBtn.onclick = () => {
+// --- Confirmar voto (¡AQUÍ ESTÁ EL CAMBIO!) ---
+voteBtn.onclick = async () => { // 1. Convertida en 'async'
   if (!selectedCandidate) {
-    statusEl.textContent = "Selecciona un candidato antes de votar.";
-    statusEl.style.color = "#d00000";
+    alert("Selecciona un candidato antes de votar.");
     return;
   }
   if (voteSubmitted) {
-    statusEl.textContent = "Ya has enviado tu voto.";
-    statusEl.style.color = "#555";
+    alert("Ya has enviado tu voto.");
     return;
   }
 
-  voteSubmitted = true;
-  statusEl.textContent = "Voto enviado correctamente.";
-  statusEl.style.color = "#198754";
+  // 2. Obtener el token de autenticación que guardamos en el login
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert("Error de autenticación. Vuelve a iniciar sesión.");
+    window.location.href = "index.html"; // Redirige al login
+    return;
+  }
+
+  // Deshabilita el botón para evitar doble clic
   voteBtn.disabled = true;
-};
+  statusEl.textContent = "Enviando voto...";
 
-// --- Obtener comprobante ---
-receiptBtn.onclick = () => {
-  if (!voteSubmitted) {
-    alert("Debes emitir tu voto antes de obtener el comprobante.");
-    return;
+  try {
+    // 3. Enviar el voto al servidor (con el token)
+    const response = await fetch('http://localhost:3000/api/votar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // ¡Importante! Envía el token "Bearer" para la autorización
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({
+        // Asume que la ID del candidato está en 'selectedCandidate.id'
+        candidateId: selectedCandidate.id 
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Si el servidor devuelve un error (ej. 403 Token inválido, 500 error)
+      throw new Error(data.error || 'No se pudo procesar el voto');
+    }
+
+    // 4. Éxito: El servidor aceptó el voto
+    voteSubmitted = true;
+    statusEl.textContent = "Voto enviado correctamente.";
+    statusEl.style.color = "#198754";
+    receiptBtn.disabled = false; // Habilita el botón de comprobante
+
+  } catch (err) {
+    // 5. Error: Hubo un problema de red o del servidor
+    statusEl.textContent = `Error: ${err.message}`;
+    statusEl.style.color = "#d00000";
+    voteBtn.disabled = false; // Habilita el botón de nuevo para reintentar
   }
-  alert(`Comprobante generado: Has votado por ${selectedCandidate.name}.`);
-};
-
-// --- Ver resultados ---
-resultsBtn.onclick = () => {
-  alert(
-    "Resultados parciales:\n\n" +
-      "Ana López - 15%\nCarlos Pérez - 13%\nLucía Torres - 11%\nMiguel García - 10%\n" +
-      "Sara Fernández - 9%\nJavier Soto - 8%\nPaula Martín - 8%\nAndrés Ramírez - 7%\n" +
-      "Elena Ríos - 10%\nDiego Navarro - 9%"
-  );
 };
 
 // --- Cerrar sesión ---
 logoutBtn.onclick = () => {
+  localStorage.removeItem('token'); // ¡Importante! Borra el token
   window.location.href = "index.html";
 };
 
-// --- Simular usuario ---
-function simulateUser() {
-  const btn = document.getElementById("logout");
-  btn.textContent = "Juan Pérez ▾";
-}
-
-// --- Filtrado en tiempo real ---
+// --- Filtrado en tiempo real (igual) ---
 filterInput.addEventListener("input", (e) => {
   renderCandidates(e.target.value);
 });
 
-// --- Inicialización ---
-document.addEventListener("DOMContentLoaded", () => {
-  renderCandidates();
-  simulateUser();
+// --- Inicialización (¡AQUÍ ESTÁ EL CAMBIO!) ---
+document.addEventListener("DOMContentLoaded", async () => { // 1. Convertida en 'async'
+  
+  // 2. Comprobar si el usuario está logueado (si no, patada al login)
+  const token = localStorage.getItem('token');
+  if (!token) {
+      alert("No has iniciado sesión.");
+      window.location.href = "index.html";
+      return; 
+  }
+
+  try {
+    // 3. Pedir los candidatos al servidor
+    const response = await fetch('http://localhost:3000/api/candidates', {
+      headers: {
+        // (Opcional, pero bueno si la ruta de candidatos está protegida)
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+        throw new Error('No se pudieron cargar los candidatos');
+    }
+
+    candidates = await response.json(); // 4. Rellena la lista global
+    
+    renderCandidates(); // 5. Renderiza la lista obtenida
+    // simulateUser(); // (Ya no necesitas simular)
+    
+    // (Podrías decodificar el token para poner el nombre de usuario real)
+
+  } catch (err) {
+      console.error(err);
+      alert("Error al cargar la página. Redirigiendo al login.");
+      window.location.href = "index.html";
+  }
 });

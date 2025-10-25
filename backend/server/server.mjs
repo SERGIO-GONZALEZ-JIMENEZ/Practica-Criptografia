@@ -4,14 +4,22 @@ import jwt from 'jsonwebtoken';
 import fs from 'node:fs';
 import bcrypt from 'bcrypt'; // Librería para hashear contraseñas
 import {createClient} from '@supabase/supabase-js'; // Cliente de supabase
+import {blockchain} from './blockchain.js'; // Blockchain
+import {verificarTokenMiddleware} from './authMiddleware.mjs'; // Para verificar JWT
+
+// Cargamos ruta de los archivos y directorios para que no haya errores a la hora de iniciar el servidor
+import path from 'path'; // Para el tema de / en Mac o Linux y \ en Windows
+import {fileURLToPath} from 'url'; 
+const __filename = fileURLToPath(import.meta.url); // Obtener dirección
+const __dirname = path.dirname(__filename) // Obtenemos directorio
 
 const app = express(); // Crear servidor
 app.use(cors()); // Lee peticiones del front-end
 app.use(express.json()); // Lee body de las peticiones
 
 // Claves JWT
-const clavePrivada = fs.readFileSync('private.key', 'utf8');
-const clavePublica = fs.readFileSync('public.key', 'utf8');
+const clavePrivada = fs.readFileSync(path.join(__dirname, 'private.key'), 'utf8');
+const clavePublica = fs.readFileSync(path.join(__dirname, 'public.key'), 'utf8');
 
 // Conexión a supabase
 const SUPABASE_URL = 'https://cdulvsxglpepjvgkrcmq.supabase.co';
@@ -87,6 +95,94 @@ app.post('/login', async (req, res) => {
 
     // Enviar token al cliente
     res.json({token: token});
+});
+
+// Obtener candidatos
+app.get('/api/candidates', async (req, res) => {
+    // Consulta SQL sobre los candidatos
+    const { data, error } = await supabase
+        .from('candidate')
+        .select('*');
+    if (error) {
+        return res.status(500).json({ error: error.message });
+    }
+    res.json(data);
+});
+
+// Votar
+app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
+    // verificarTokenMiddleare verificará el token 
+    const { id: userId, email: userEmail } = req.usuario;
+    const { candidateId } = req.body;
+
+    if (!candidateId) {
+        return res.status(400).json({ error: 'No se especificó un candidateId' });
+    }
+
+    // Comprobamos que el usuario no haya votado ya
+    try {
+        // Consulta SQL para encontrar voto
+        const { data: candidateData, error: candidateError } = await supabase
+            .from('candidate')
+            .select('elections_id')
+            .eq('id', candidateId) // Para ver que ese candidato es de esas elecciones
+            .single(); 
+
+        if (candidateError || !candidateData) {
+            return res.status(404).json({ error: 'Candidato no encontrado' });
+        }
+        
+        const electionId = candidateData.elections_id;
+
+        // Consulta SQL para encontrar si ha votado ya
+        const { data: existingVote, error: voteError } = await supabase
+            .from('vote') 
+            .select('id') 
+            .eq('user_id', userId) // Encontrar usuario
+            .eq('elections_id', electionId) // Coincide voto
+            .maybeSingle(); // Devuelve un resultado (el voto) o 'null'
+
+        if (voteError) {
+            throw new Error(voteError.message); // Error de base de datos
+        }
+
+        if (existingVote) {
+            // Voto duplicado
+            // 409 Conflict es el código HTTP correcto para esto.
+            return res.status(409).json({ error: 'Ya has votado en esta elección' });
+        }
+
+        console.log(`Voto válido: Usuario ${userId} votando por candidato ${candidateId} en elección ${electionId}`);
+
+        // Añadimos voto a la blockchain
+        const nuevoVoto = {
+            votante: userId, // ID del usuario (del JWT)
+            candidato: candidateId,
+            timestamp: Math.floor(Date.now() / 1000)
+        };
+
+        blockchain.addBlock([nuevoVoto]);
+        
+        // Consulta para añadir voto
+        const { error: insertError } = await supabase
+            .from('vote')
+            .insert({
+                user_id: userId,
+                candidate_id: candidateId,
+                elections_id: electionId,
+                date: new Date().toISOString()
+            });
+
+        if (insertError) {
+            throw new Error(insertError.message);
+        }
+
+        res.json({ message: 'Voto registrado exitosamente' });
+
+    } catch (err) {
+        console.error('Error procesando el voto:', err.message);
+        res.status(500).json({ error: 'Error interno del servidor al procesar el voto' });
+    }
 });
 
 // Iniciar servidor

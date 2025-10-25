@@ -1,10 +1,11 @@
 import hashlib
 from block import Block
 from datetime import datetime
-from utils.slist import SList
+from backend.utils.slist.slist import SList
 from dataclasses import dataclass
+from typing import cast # Para error tipo object y Block
 
-@dataclass(frozen=True)
+"""@dataclass(frozen=True)"""
 class Blockchain:
     def __init__(self):
         self.__chain = SList()
@@ -17,9 +18,9 @@ class Blockchain:
         """
         Creates the first block of the blockchain
         """
-        return Block(0, "0"*64, "0")
+        return Block(0, [], "0"*64)
 
-    def read_last_block(self):
+    def read_last_block(self) -> Block:
         """
         Returns the last block in the chain
         """
@@ -30,14 +31,18 @@ class Blockchain:
             return self.create_genesis_block()
         while current.next:
             current = current.next
-        return current.elem
+        return cast(Block, current.elem)
 
     def add_block(self, votes: list):
         """
         Adds a new block to the chain with a given number of votes
         """
-        last_block = self.read_last_block()
-        new_block = Block(len(self.__chain), votes, last_block.hash)
+        last_block : Block = self.read_last_block()
+        # Ensure last_block is a Block instance before accessing .hash; otherwise use genesis block hash
+        prev_hash = last_block.hash
+        # El índice del nuevo bloque será el índice anterior más 1
+        new_index = last_block.index + 1
+        new_block = Block(new_index, votes, prev_hash)
         self.__chain.add_block(new_block)
 
     def is_chain_valid(self):
@@ -50,14 +55,14 @@ class Blockchain:
         if current is None:
             return True
         while current.next:
-            current_block = current.elem
-            next_block = current.next.elem
+            current_block = cast(Block, current.elem)
+            next_block = cast(Block, current.next.elem)
             if current_block.hash != next_block.previous_hash:
                 return False
-            if current_block.hash != current_block._Block__calculate_hash():
+            if current_block.hash != current_block.get_calculated_hash():
                 return False
             current = current.next
-        last_block = current.elem
-        if last_block.hash != last_block._Block__calculate_hash():
+        last_block = cast(Block, current.elem)
+        if last_block.hash != last_block.get_calculated_hash():
             return False
         return True
