@@ -161,18 +161,6 @@ document.addEventListener("DOMContentLoaded", async () => { // 1. Convertida en 
     
     renderCandidates(); // 5. Renderiza la lista obtenida
     // simulateUser(); // (Ya no necesitas simular)
-    
-    // --- SUCCESS ---
-      voteSubmitted = true;
-      statusEl.textContent = "Voto enviado correctamente.";
-      statusEl.style.color = "#198754";
-      receiptBtn.disabled = false;
-
-      // 👇 ADD THESE LINES 👇
-      // Show a brief message before redirecting
-      alert("¡Gracias por votar! Serás redirigido a la página de inicio.");
-      // Redirect the user to index.html
-      window.location.href = "index.html";
 
   } catch (err) {
       console.error(err);

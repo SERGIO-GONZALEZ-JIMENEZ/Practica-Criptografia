@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import json
 from fastapi import FastAPI # Transforma json a diccionarios de python
 from fastapi.middleware.cors import CORSMiddleware 
@@ -6,7 +8,7 @@ from ..utils.crypto.encript import cifrar_aes
 import os
 
 def cargar_clave_maestra() -> bytes:
-    RUTA_CLAVE = "master.key" 
+    RUTA_CLAVE = os.getenv("MASTER_KEY_PATH", "master.key") 
     if not os.path.exists(RUTA_CLAVE):
         print(f"FATAL: No se encuentra el archivo de clave '{RUTA_CLAVE}'")
         print("Asegúrate de ejecutar 'generate_key.py' primero.")

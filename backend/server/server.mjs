@@ -13,17 +13,33 @@ import {fileURLToPath} from 'url';
 const __filename = fileURLToPath(import.meta.url); // Obtener dirección
 const __dirname = path.dirname(__filename) // Obtenemos directorio
 
+import dotenv from 'dotenv';
+dotenv.config({path: path.resolve(__dirname, '.env')});
+
 const app = express(); // Crear servidor
 app.use(cors()); // Lee peticiones del front-end
 app.use(express.json()); // Lee body de las peticiones
+
+// Definimos ruta a la app-web para que se pueda abrir
+const frontendPath = path.join(__dirname, '..', '..', 'app-web');
+console.log(`Abriendo archivos desde: ${frontendPath}`);
+
+// Hacemos que sea accesible 
+app.use(express.static(frontendPath));
+
+// Redirección a index.html si alguien va a /
+app.get('/', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
 // Claves JWT
 const clavePrivada = fs.readFileSync(path.join(__dirname, 'private.key'), 'utf8');
 const clavePublica = fs.readFileSync(path.join(__dirname, 'public.key'), 'utf8');
 
+console.log("SUPABASE_SERVICE_KEY:", process.env.SUPABASE_SERVICE_KEY);
 // Conexión a supabase
-const SUPABASE_URL = 'https://cdulvsxglpepjvgkrcmq.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkdWx2c3hnbHBlcGp2Z2tyY21xIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTA1NzgxOSwiZXhwIjoyMDc2NjMzODE5fQ.9_3JNT39GsldPBybtRTNncyHC6cQ5Uj7xfpGdpFXbl0';
+const SUPABASE_URL = "https://cdulvsxglpepjvgkrcmq.supabase.co";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Registro de usuario
@@ -112,9 +128,12 @@ app.get('/api/candidates', async (req, res) => {
 // Endpoint Votar
 app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
     // verificarTokenMiddleare verificará el token 
+    // ---- START DEBUG LOGS ----
+    console.log("----- VOTE ATTEMPT -----");
+    console.log("User from Token:", req.usuario);
     const { id: userId, email: userEmail } = req.usuario;
     const { candidateId } = req.body;
-
+    console.log(`Received vote for candidate: ${candidateId} from user: ${userId}`);
     if (!candidateId) {
         return res.status(400).json({ error: 'No se especificó un candidateId' });
     }
@@ -133,7 +152,7 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
         }
         
         const electionId = candidateData.elections_id;
-
+        console.log(`Determined Election ID: ${electionId}`);
         // Consulta SQL para encontrar si ha votado ya
         const { data: existingVote, error: voteError } = await supabase
             .from('vote') 
@@ -142,6 +161,7 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
             .eq('elections_id', electionId) // Coincide voto
             .maybeSingle(); // Devuelve un resultado (el voto) o 'null'
 
+        console.log("Existing vote query result:", { existingVote, voteError }); // Log query result
         if (voteError) {
             throw new Error(voteError.message); // Error de base de datos
         }
