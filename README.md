@@ -106,7 +106,7 @@ Hemos proporcionado scripts para facilitar el arranque de ambos servidores.
     * Intentan abrir tu navegador web automáticamente en `http://localhost:3000`.
 
 4.  **Para detener los servidores:**
-    * **macOS/Linux:** Presiona `Ctrl+C` en la terminal donde ejecutaste `start.sh`. El script se encargará de detener ambos procesos.
+    * **macOS/Linux:** Presiona `Ctrl+C` en la terminal donde ejecutaste `start.sh`. El script se encargará de detener ambos procesos. Dale otra vez para volver a la normalidad.
     * **Windows:** Presiona `Ctrl+C` en la ventana del servidor Node.js. Luego, **cierra manualmente** la ventana separada donde se está ejecutando el servidor Python.
 
 ## 📖 Uso de la Aplicación
