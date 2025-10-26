@@ -3,13 +3,18 @@ import hashlib
 import json
 
 class Block:
-    def __init__(self, index:int, votes:list, previous_hash: str):
+    def __init__(self, index:int, votes:list, previous_hash: str, saved_hash: str | None = None, saved_timestamp: float | None = None):
         self.__index = index
         self.__votes = votes
         self.__previous_hash = previous_hash
-        self.__timestamp = datetime.datetime.now(datetime.timezone.utc).timestamp()
-        self.__hash = self.__calculate_hash()
-
+        # En caso de que hubiera una blockchain guardada de antes
+        self.__timestamp = saved_timestamp if saved_timestamp is not None else datetime.datetime.now(datetime.timezone.utc).timestamp()
+        
+        # Para que no recalcule de nuevo un hash en caso de blockchain que ya existía
+        if saved_hash is not None:
+            self.__hash = saved_hash
+        else:
+            self.__hash = self.__calculate_hash()
     
     @property
     def index(self):

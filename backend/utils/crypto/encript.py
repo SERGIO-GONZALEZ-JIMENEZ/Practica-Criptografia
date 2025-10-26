@@ -13,6 +13,11 @@ def generar_aes_key_master():
 def cifrar_aes(texto: str, key_master: bytes):
     cipher = AES.new(key_master, AES.MODE_EAX)
     ct, tag = cipher.encrypt_and_digest(texto.encode())
+
+    # Mensajes de log
+    print(f"DEBUG: Cifrado AES-EAX completado. Longitud clave: {len(key_master)*8}-bit.")
+    print(f"DEBUG: Etiqueta de Autenticación (MAC/Tag) generada por AES-EAX.")
+
     return {
         "ciphertext": base64.b64encode(ct).decode(),
         "nonce": base64.b64encode(cipher.nonce).decode(),
@@ -25,9 +30,14 @@ def descifrar_aes(ciphertext_b64, nonce_b64, tag_b64, key_master):
     tag = base64.b64decode(tag_b64)
     cipher = AES.new(key_master, AES.MODE_EAX, nonce=nonce)
     try:
-        return cipher.decrypt_and_verify(ct, tag).decode()
+        decypted_data = cipher.decrypt_and_verify(ct, tag).decode()
+
+        # Mensajes de log
+        print(f"DEBUG: Descifrado AES-EAX completado. Longitud clave: {len(key_master)*8}-bit.")
+        print(f"DEBUG: Verificación de Etiqueta de Autenticación (MAC/Tag) de AES-EAX: ÉXITO.")
+        return decypted_data
     except ValueError:
-        return "Error: clave incorrecta o datos corruptos"
+        return "Error: clave incorrecta o datos corruptos. Fallo el MAC"
 
 # Asymmetric RSA Signing/Verification
 def generar_rsa_keys():
