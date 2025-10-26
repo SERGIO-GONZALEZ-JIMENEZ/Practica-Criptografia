@@ -5,7 +5,7 @@ import json
 class Block:
     def __init__(self, index:int, votes:list, previous_hash: str):
         self.__index = index
-        self.__vote = votes
+        self.__votes = votes
         self.__previous_hash = previous_hash
         self.__timestamp = datetime.datetime.now(datetime.timezone.utc).timestamp()
         self.__hash = self.__calculate_hash()
@@ -22,7 +22,7 @@ class Block:
         return self.__timestamp
     @property
     def vote(self):
-        return self.__vote
+        return self.__votes
     @property
     def hash(self):
         return self.__hash
@@ -36,7 +36,7 @@ class Block:
             "index": self.__index,
             "previous_hash": self.__previous_hash,
             "timestamp": self.__timestamp,
-            "vote": self.__vote
+            "vote": self.__votes
         }
         encoded = json.dumps(block_data, sort_keys=True).encode()
         return hashlib.sha256(encoded).hexdigest()
@@ -46,4 +46,14 @@ class Block:
         return self.__calculate_hash
     
     def __repr__(self):
-        return f"Block(index={self.index}, previous_hash='{self.previous_hash}', timestamp={self.timestamp}, hash='{self.hash}')"
+        return f"Block(index={self.__index}, previous_hash='{self.__previous_hash}', timestamp={self.__timestamp}, hash='{self.__hash}')"
+    
+    # Pasamos a diccionario para luego transformarlo en json usando fastapi
+    def to_dict(self):
+        return {
+            "index": self.__index,
+            "votes": self.__votes,
+            "previous_hash": self.__previous_hash,
+            "timestamp": self.__timestamp,
+            "hash": self.__hash
+        }

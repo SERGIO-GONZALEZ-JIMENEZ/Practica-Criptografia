@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Clave secreta 
+master.key
+
 # Distribution / packaging
 .Python
 build/

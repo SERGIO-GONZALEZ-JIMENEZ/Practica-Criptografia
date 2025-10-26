@@ -21,7 +21,8 @@ async function db_login(email, password) {
         // Successful login
         console.log('Login successful:', data);
         localStorage.setItem('token', data.token);
-        //alert('Login exitoso');
+        alert('Login exitoso');
+        window.location.href = "vote.html";
 
     } catch (error) {
         console.error('Error during login:', error.message);

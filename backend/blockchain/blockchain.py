@@ -1,9 +1,10 @@
 import hashlib
-from block import Block
+from .block import Block
 from datetime import datetime
 from backend.utils.slist.slist import SList
 from dataclasses import dataclass
 from typing import cast # Para error tipo object y Block
+import json
 
 """@dataclass(frozen=True)"""
 class Blockchain:
@@ -66,3 +67,17 @@ class Blockchain:
         if last_block.hash != last_block.get_calculated_hash():
             return False
         return True
+
+    # Para pasar dict a json
+    def to_json(self):
+        block_array = []
+        current = self.__chain.head
+
+        while current:
+            block = cast(Block, current.elem)
+
+            block_array.append(block.to_dict())
+            current = current.next
+        
+        return json.dumps(block_array, indent=4)
+    

@@ -1,5 +1,6 @@
 """Clase Single Linked List"""
 from backend.utils.slist.node import Node
+from backend.blockchain.block import Block
 
 class SList:
     def __init__(self):
@@ -34,6 +35,3 @@ class SList:
                     current = current.next
                 current.next = None
             self.size -= 1
-
-
-        

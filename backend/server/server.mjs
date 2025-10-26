@@ -109,7 +109,7 @@ app.get('/api/candidates', async (req, res) => {
     res.json(data);
 });
 
-// Votar
+// Endpoint Votar
 app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
     // verificarTokenMiddleare verificará el token 
     const { id: userId, email: userEmail } = req.usuario;

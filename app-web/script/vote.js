@@ -74,6 +74,7 @@ voteBtn.onclick = async () => { // 1. Convertida en 'async'
 
   // 2. Obtener el token de autenticación que guardamos en el login
   const token = localStorage.getItem('token');
+  console.log(token);
   if (!token) {
     alert("Error de autenticación. Vuelve a iniciar sesión.");
     window.location.href = "index.html"; // Redirige al login
@@ -136,11 +137,12 @@ document.addEventListener("DOMContentLoaded", async () => { // 1. Convertida en 
   
   // 2. Comprobar si el usuario está logueado (si no, patada al login)
   const token = localStorage.getItem('token');
-  if (!token) {
-      alert("No has iniciado sesión.");
-      window.location.href = "index.html";
-      return; 
-  }
+  console.log(token);
+  //if (!token) {
+   //   alert("No has iniciado sesión.");
+   //   window.location.href = "index.html";
+     // return; 
+  //}
 
   try {
     // 3. Pedir los candidatos al servidor
@@ -160,7 +162,17 @@ document.addEventListener("DOMContentLoaded", async () => { // 1. Convertida en 
     renderCandidates(); // 5. Renderiza la lista obtenida
     // simulateUser(); // (Ya no necesitas simular)
     
-    // (Podrías decodificar el token para poner el nombre de usuario real)
+    // --- SUCCESS ---
+      voteSubmitted = true;
+      statusEl.textContent = "Voto enviado correctamente.";
+      statusEl.style.color = "#198754";
+      receiptBtn.disabled = false;
+
+      // 👇 ADD THESE LINES 👇
+      // Show a brief message before redirecting
+      alert("¡Gracias por votar! Serás redirigido a la página de inicio.");
+      // Redirect the user to index.html
+      window.location.href = "index.html";
 
   } catch (err) {
       console.error(err);
