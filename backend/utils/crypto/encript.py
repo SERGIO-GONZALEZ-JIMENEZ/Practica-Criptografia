@@ -17,7 +17,10 @@ def cifrar_aes(texto: str, key_master: bytes):
     # Mensajes de log
     print(f"DEBUG: Cifrado AES-EAX completado. Longitud clave: {len(key_master)*8}-bit.")
     print(f"DEBUG: Etiqueta de Autenticación (MAC/Tag) generada por AES-EAX.")
-
+    
+    # Para acordarnos, ciphertext encriptación de la blockchain
+    # nonce es el número aleatorio generado para cada cifrado del AES-EAX
+    # tag es el MAC o etiqueta de autentificación o firma
     return {
         "ciphertext": base64.b64encode(ct).decode(),
         "nonce": base64.b64encode(cipher.nonce).decode(),

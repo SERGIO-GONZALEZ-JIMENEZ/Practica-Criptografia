@@ -52,7 +52,8 @@ async function db_register(email, password) {
 
         // Successful registration
         console.log('Register successful:', data);
-        //alert(data.message);
+        alert(data.message);
+        window.location.href = "vote.html";
 
     } catch (error) {
         console.error('Error durante el registro:', error.message);

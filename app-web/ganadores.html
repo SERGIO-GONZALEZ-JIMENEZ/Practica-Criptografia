@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civium — Resultados de la Votación</title>
+    <link rel="stylesheet" href="style/vote.css"> 
+    <link rel="stylesheet" href="style/ganadores.css">
+    <link rel="icon" href="public/images/Logo_icon.ico" sizes="any" />
+</head>
+<body>
+
+    <div class="results-container">
+        <h1>🏆 Resultados de la Votación 🏆</h1>
+        <p>Top 3 Candidatos Más Votados:</p>
+
+        <ol class="results-list" id="winners-list">
+            <li class="winner-item template" style="display: none;"> <div class="winner-info">
+                    <span class="winner-name">Nombre Candidato</span>
+                    <br>
+                    <span class="winner-votes">Votos: 0</span>
+                </div>
+            </li>
+            <li id="loading-message">Cargando resultados...</li>
+        </ol>
+
+        <a href="index.html" class="back-link">Volver al Inicio</a>
+    </div>
+    <script src="script/ganadores.js"></script>
+</body>
+</html>

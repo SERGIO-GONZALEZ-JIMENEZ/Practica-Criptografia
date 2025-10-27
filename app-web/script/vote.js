@@ -1,4 +1,4 @@
-// --- Elementos del DOM (igual que antes) ---
+// Elementos del DOM 
 const candidateList = document.getElementById("candidates");
 const statusEl = document.getElementById("vote-status");
 const choiceEl = document.getElementById("chosen-name");
@@ -7,13 +7,14 @@ const resultsBtn = document.getElementById("view-results");
 const receiptBtn = document.getElementById("verify-proof");
 const logoutBtn = document.getElementById("logout");
 const filterInput = document.getElementById("filter");
+const finalizeBtn = document.getElementById("finalize");
 
-// --- Variables Globales ---
+// Variables Globales 
 let candidates = []; // Esta lista se rellenará desde el servidor
 let selectedCandidate = null;
-let voteSubmitted = false; // (Deberías comprobar esto también en el servidor)
+let voteSubmitted = false; 
 
-// --- Renderizar candidatos (casi igual) ---
+// Renderizar candidatos 
 function renderCandidates(filter = "") {
   candidateList.innerHTML = "";
   const lowerFilter = filter.toLowerCase();
@@ -45,7 +46,7 @@ function renderCandidates(filter = "") {
     });
 }
 
-// --- Seleccionar candidato (casi igual) ---
+// Seleccionar candidato 
 function selectCandidate(candidate, card) {
   if (voteSubmitted) return;
 
@@ -61,8 +62,8 @@ function selectCandidate(candidate, card) {
   voteBtn.disabled = false;
 }
 
-// --- Confirmar voto (¡AQUÍ ESTÁ EL CAMBIO!) ---
-voteBtn.onclick = async () => { // 1. Convertida en 'async'
+// Confirmar voto 
+voteBtn.onclick = async () => {
   if (!selectedCandidate) {
     alert("Selecciona un candidato antes de votar.");
     return;
@@ -72,7 +73,7 @@ voteBtn.onclick = async () => { // 1. Convertida en 'async'
     return;
   }
 
-  // 2. Obtener el token de autenticación que guardamos en el login
+  // Obtener el token de autenticación que guardamos en el login
   const token = localStorage.getItem('token');
   console.log(token);
   if (!token) {
@@ -86,16 +87,15 @@ voteBtn.onclick = async () => { // 1. Convertida en 'async'
   statusEl.textContent = "Enviando voto...";
 
   try {
-    // 3. Enviar el voto al servidor (con el token)
+    // Enviar el voto al servidor (con el token)
     const response = await fetch('http://localhost:3000/api/votar', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // ¡Importante! Envía el token "Bearer" para la autorización
+        // Envía el token "Bearer" para la autorización
         'Authorization': `Bearer ${token}` 
       },
       body: JSON.stringify({
-        // Asume que la ID del candidato está en 'selectedCandidate.id'
         candidateId: selectedCandidate.id 
       })
     });
@@ -103,36 +103,86 @@ voteBtn.onclick = async () => { // 1. Convertida en 'async'
     const data = await response.json();
 
     if (!response.ok) {
-      // Si el servidor devuelve un error (ej. 403 Token inválido, 500 error)
+      // Si el servidor devuelve un error 
       throw new Error(data.error || 'No se pudo procesar el voto');
     }
 
-    // 4. Éxito: El servidor aceptó el voto
+    // El servidor aceptó el voto
     voteSubmitted = true;
     statusEl.textContent = "Voto enviado correctamente.";
     statusEl.style.color = "#198754";
     receiptBtn.disabled = false; // Habilita el botón de comprobante
 
   } catch (err) {
-    // 5. Error: Hubo un problema de red o del servidor
+    // Hubo un problema de red o del servidor
     statusEl.textContent = `Error: ${err.message}`;
     statusEl.style.color = "#d00000";
     voteBtn.disabled = false; // Habilita el botón de nuevo para reintentar
   }
 };
 
-// --- Cerrar sesión ---
+// Cerrar sesión 
 logoutBtn.onclick = () => {
-  localStorage.removeItem('token'); // ¡Importante! Borra el token
+  localStorage.removeItem('token'); 
   window.location.href = "index.html";
 };
 
-// --- Filtrado en tiempo real (igual) ---
+// Filtrado en tiempo real 
 filterInput.addEventListener("input", (e) => {
   renderCandidates(e.target.value);
 });
 
-// --- Inicialización (¡AQUÍ ESTÁ EL CAMBIO!) ---
+// Función para finalizar votación
+finalizeBtn.onclick = async () => {
+  console.log("Votón de finalizar votación presionado");
+
+  // Obtenemos token
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert("Error de autentificación. Vuelve a iniciar sesión");
+    window.location.href = "index.html";
+    return;
+  }
+
+  // Por si acaso le dan sin querer
+  if (!confirm("¿Seguro de finalizar votación?")) {
+    return;
+  }
+
+  // Status processing
+  statusEl.textContent = "Finalizando votación y obteniendo resultados...";
+  finalizeBtn.disabled = true;
+
+  try {
+    // Llama a endpoint
+    const response = await fetch('http://localhost:3000/api/finalize-election', {
+      method: 'POST', // Post modifica estado
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'No se pudo finalizar votación');
+    }
+
+    console.log("Votación finalizada. Resultados:", data.results);
+
+    sessionStorage.setItem('electionResults', JSON.stringify(data.results));
+
+    window.location.href = "ganadores.html";
+  }
+  catch (err) {
+    console.log('Error al finalizar votación:', err);
+    alert(`Error: ${error.message}`);
+    statusEl.textContent = `Error al finalizar: ${err.message}`;
+    finalizeBtn.disabled = false; // Habilita botón de nuevo
+  }
+
+}
+// Inicialización 
 document.addEventListener("DOMContentLoaded", async () => { // 1. Convertida en 'async'
   
   // 2. Comprobar si el usuario está logueado (si no, patada al login)

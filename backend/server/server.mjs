@@ -165,6 +165,8 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
             throw new Error(voteError.message); // Error de base de datos
         }
 
+        console.log(existingVote);
+
         if (existingVote) {
             // Voto duplicado
             // 409 Conflict es el código HTTP correcto para esto.
@@ -218,6 +220,87 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
     } catch (err) {
         console.error('Error procesando el voto:', err.message);
         res.status(500).json({ error: 'Error interno del servidor al procesar el voto' });
+    }
+});
+
+app.post('/api/finalize-election', verificarTokenMiddleware, async (req, res) => {
+    console.log("----- FINALIZE ELECTION ATTEMPT -----");
+    // Gracias a verificarTokenMiddleware, sabemos que el usuario está autenticado.
+    const requestingUser = req.usuario; // Datos del usuario que pide finalizar
+    console.log(`Petición recibida de: ${requestingUser.email}`);
+
+    try {
+        // Llamar a la API de Python para forzar el último bloque 
+        console.log("Llamando a Python API para forzar creación de bloque...");
+        const pythonForceResponse = await fetch('http://localhost:8000/force_block_creation', {
+            method: 'POST',
+        });
+
+        const pythonForceData = await pythonForceResponse.json();
+
+        if (!pythonForceResponse.ok) {
+            // Si la API de Python dio error al forzar el bloque
+            console.error("Error desde API Python (force_block_creation):", pythonForceData);
+            throw new Error(pythonForceData.error || pythonForceData.detail || 'Error al forzar bloque en Python');
+        }
+        console.log("Respuesta de API Python (force_block_creation):", pythonForceData.message);
+
+        // Calcular los resultados desde Supabase 
+        console.log("Calculando resultados desde Supabase...");
+
+        // Consulta para contar votos por candidato y obtener el nombre del candidato
+        const { data: resultsData, error: resultsError } = await supabase
+            .from('vote') // Desde la tabla de votos
+            .select(`
+                candidate_id, 
+                candidate (full_name) 
+            `)
+            // .eq('elections_id', ID_DE_LA_ELECCION_ACTUAL) // <-- IMPORTANTE: Filtra por la elección que quieres cerrar!
+            ; // No agrupamos aquí, Supabase no tiene GROUP BY directo complejo en JS client
+
+        if (resultsError) {
+            console.error("Error al obtener votos de Supabase:", resultsError);
+            throw new Error(`Error al leer votos: ${resultsError.message}`);
+        }
+
+        // Procesar los resultados 
+        if (!resultsData || resultsData.length === 0) {
+             console.log("No se encontraron votos para calcular resultados.");
+             return res.json({ message: "Votación finalizada (sin votos)", results: [] });
+        }
+
+        // Contar votos por candidato
+        const voteCounts = resultsData.reduce((acc, vote) => {
+            const candidateId = vote.candidate_id;
+            const candidateName = vote.candidate ? vote.candidate.full_name : `ID ${candidateId}`;
+
+            if (!acc[candidateId]) {
+                acc[candidateId] = { candidateId: candidateId, count: 0, name: candidateName };
+            }
+            acc[candidateId].count += 1;
+            return acc;
+        }, {});
+
+        // Convertir el objeto de conteo en un array
+        const resultsArray = Object.values(voteCounts);
+
+        // Ordenar por número de votos (descendente)
+        resultsArray.sort((a, b) => b.count - a.count);
+
+        // Tomar el Top 3
+        const top3Results = resultsArray.slice(0, 3);
+
+        console.log("Resultados Top 3 calculados:", top3Results);
+
+        // Devolver los resultados al cliente 
+        res.json({
+            message: "Votación finalizada exitosamente.",
+            results: top3Results
+        });
+
+    } catch (err) {
+        console.error('Error al finalizar la votación:', err.message);
+        res.status(500).json({ error: 'Error interno del servidor al finalizar la votación' });
     }
 });
 
