@@ -4,7 +4,7 @@ import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from typing import cast # Necesario para reconstruir SList
+from typing import cast, List # Necesario para reconstruir SList
 
 from .blockchain import Blockchain
 from .block import Block # Necesario para reconstruir los bloques
@@ -138,20 +138,56 @@ blockchain = load_chain_from_file()
 
 print("Servidor Blockchain listo para recibir peticiones.")
 
+# Añadimos mempool para manejar los votos y el número de votos por bloque
+mempool : List[dict] = []
+VOTES_PER_BLOCK = 5 # Este valor se puede modificar
+
+# Creamos función para insertar votos a la mempool y luego este al block
+def add_insert_block():
+    global mempool
+
+    if not mempool:
+        print("Error: Intento de crear bloque con mempool vacía")
+        return
+    
+    # Mensajes para ver como los añade
+    print(f"Creando bloque con {len(mempool)} votos")
+    try:
+        # Pasa copia de la mempool actual
+        blockchain.add_block(list(mempool))
+        block = blockchain.read_last_block()
+        print(f"Nuevo bloque añadido: Índice {block.index}, Hash {block.hash}")
+
+        # Limpia la mempool y resetea el contador
+        mempool.clear()
+        print("Mempool limpiada.")
+
+    except Exception as e:
+        print(f"ERROR CRÍTICO al crear bloque desde mempool: {str(e)}")
+    
 # Endpoints 
 @app.post("/add_vote")
 async def add_vote_endpoint(vote: dict):
+    global mempool # Necesitamos modificar la variable global
+
     try:
-        blockchain.add_block([vote]) # Tu lógica de añadir bloque
-        block = blockchain.read_last_block()
+        # Añadir el voto a la mempool
+        mempool.append(vote)
+        print(f"Voto añadido a la mempool. Tamaño actual: {len(mempool)}")
+
+        # Compruebar si hemos alcanzado el límite
+        if len(mempool) >= VOTOS_POR_BLOQUE:
+            add_insert_block() # Llama a la función para crear el bloque
+
+        # Devolver una respuesta indicando que el voto está pendiente
         return {
-            "message": "Voto añadido a la blockchain",
-            "block_index": block.index,
-            "block_hash": block.hash
+            "message": "Voto recibido y añadido a la mempool",
+            "mempool_size": len(mempool),
+            "votes_needed_for_block": VOTOS_POR_BLOQUE
         }
     except Exception as e:
         print(f"Error en /add_vote: {str(e)}")
-        return {"error": "Error interno al añadir el voto"}, 500
+        return {"error": "Error interno al procesar el voto"}, 500
 
 @app.get("/save_chain_encrypted")
 async def save_chain():
@@ -173,3 +209,11 @@ async def save_chain():
     except Exception as e:
         print(f"Error en /save_chain_encrypted: {str(e)}")
         return {"error": str(e)}, 500
+
+# Creamos función para el caso en el que no se alcanze el umbral de votos 
+@app.post("/force_block_creation")
+async def force_block_creation():
+    if not mempool:
+        return {"message": "Mempool vacía no se creó ningún bloque"}
+    add_insert_block()
+    return {"message": f"Bloque creado a la fuerza con {blockchain.read_last_block().index} bloques en total"}
