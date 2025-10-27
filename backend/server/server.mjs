@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import fs from 'node:fs';
 import bcrypt from 'bcrypt'; // Librería para hashear contraseñas
 import {createClient} from '@supabase/supabase-js'; // Cliente de supabase
-import {blockchain} from './blockchain.js'; // Blockchain
 import {verificarTokenMiddleware} from './authMiddleware.mjs'; // Para verificar JWT
 
 // Cargamos ruta de los archivos y directorios para que no haya errores a la hora de iniciar el servidor
@@ -131,7 +130,7 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
     // ---- START DEBUG LOGS ----
     console.log("----- VOTE ATTEMPT -----");
     console.log("User from Token:", req.usuario);
-    const { id: userId, email: userEmail } = req.usuario;
+    const { id: userId } = req.usuario;
     const { candidateId } = req.body;
     console.log(`Received vote for candidate: ${candidateId} from user: ${userId}`);
     if (!candidateId) {
@@ -175,13 +174,30 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
         console.log(`Voto válido: Usuario ${userId} votando por candidato ${candidateId} en elección ${electionId}`);
 
         // Añadimos voto a la blockchain
-        const nuevoVoto = {
-            votante: userId, // ID del usuario (del JWT)
+        const nuevoVotoPayload = {
+            userId: userId, // ID del usuario (del JWT)
             candidato: candidateId,
+            electionId: electionId,
             timestamp: Math.floor(Date.now() / 1000)
         };
+        
+        // Llamamos API de Python
+        console.log("Enviando voto a la API de Python...");
+        const pythonResponse = await fetch('http://localhost:8000/add_vote', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(nuevoVotoPayload)
+        });
+        
+        const pythonData = await pythonResponse.json();
 
-        blockchain.addBlock([nuevoVoto]);
+        if (!pythonResponse.ok) {
+            console.error("Error desde la API de Python:", pythonData);
+            throw new Error(pythonData.error || pythonData.detail || 'Error en el servicio de Blockchain');
+        }
+        console.log("Respuesta de la API de Python:", pythonData); // Loguea el éxito
+        
+        console.log("Guardando voto en Supabase");
         
         // Consulta para añadir voto
         const { error: insertError } = await supabase
