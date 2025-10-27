@@ -18,6 +18,8 @@ El sistema se compone de tres partes principales:
     * Recibe los votos del servidor Node.js y los añade a la blockchain (`/add_vote`).
     * Permite guardar la blockchain de forma cifrada en un archivo (`/save_chain_encrypted`) usando **AES** con una clave maestra.
 
+. ├── LICENSE ├── Practica-Criptografia.code-workspace ├── README.md ├── app-web │ ├── index.html │ ├── public │ │ ├── images │ │ │ ├── Logo.png │ │ │ ├── Logo_icon.ico │ │ │ └── Logo_icon_png.png │ │ └── fonts │ │ └── Inter-VariableFont_opsz,wght.ttf │ ├── script │ │ ├── ganadores.js │ │ ├── homepage.js │ │ └── vote.js │ ├── style │ │ ├── homepage.css │ │ └── vote.css │ └── vote.html ├── backend │ ├── blockchain │ │ ├── api.py │ │ ├── block.py │ │ ├── blockchain.py │ │ └── vote.py │ ├── server │ │ ├── .env │ │ ├── .env.example │ │ ├── authMiddleware.mjs │ │ ├── blockchain.js │ │ ├── block.js │ │ ├── private.key │ │ ├── public.key │ │ └── server.mjs │ └── utils │ ├── crypto │ │ └── encrypt.py │ ├── slist │ │ ├── node.py │ │ └── slist.py │ └── init.py ├── generate_key.py ├── master.key ├── package-lock.json ├── package.json ├── requirements.txt ├── start.bat └── start.sh
+
 **Flujo de Voto:** Navegador → Servidor Node.js (Validación + JWT) → API Python (Añadir a Blockchain)
 
 ## ⚙️ Prerrequisitos
