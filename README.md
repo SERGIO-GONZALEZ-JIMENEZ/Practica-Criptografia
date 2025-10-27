@@ -61,13 +61,28 @@ Sigue estos pasos para configurar el proyecto en tu máquina local:
 
 4.  **Instalar Dependencias de Python:**
     ```bash
+    # En caso en el que no tengas pip instalado usar
+    sudo apt install python3-pip
     pip3 install -r requirements.txt
     ```
 
 5.  **Configurar Archivos `.env`:**
     * Copia `backend/server/.env.example` a `backend/server/.env`.
+    ```bash
+    # Para macOS/Linux
+    cp backend/server/.env.example backend/server/.env
+    # Para Windows (cmd)
+    copy backend\server\.env.example backend\server\.env
+    ```
     * Edita `backend/server/.env` y añade tu clave **`service_role`** de Supabase.
     * Copia `backend/blockchain/.env.example` a `backend/blockchain/.env` (si lo creaste).
+    ```bash
+    # En macOS / Linux
+    cp backend/blockchain/.env.example backend/blockchain/.env
+      
+    # En Windows (cmd)
+    copy backend\blockchain\.env.example backend\blockchain\.env
+    ```
 
 6.  **Generar Claves Criptográficas:**
     * **Clave Maestra AES:** Ejecuta `python3 generate_key.py` en la raíz. Esto creará el archivo `master.key` (asegúrate de que esté en tu `.gitignore`).
