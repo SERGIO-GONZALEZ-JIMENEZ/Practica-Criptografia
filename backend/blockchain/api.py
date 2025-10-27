@@ -176,14 +176,14 @@ async def add_vote_endpoint(vote: dict):
         print(f"Voto añadido a la mempool. Tamaño actual: {len(mempool)}")
 
         # Compruebar si hemos alcanzado el límite
-        if len(mempool) >= VOTOS_POR_BLOQUE:
+        if len(mempool) >= VOTES_PER_BLOCK:
             add_insert_block() # Llama a la función para crear el bloque
 
         # Devolver una respuesta indicando que el voto está pendiente
         return {
             "message": "Voto recibido y añadido a la mempool",
             "mempool_size": len(mempool),
-            "votes_needed_for_block": VOTOS_POR_BLOQUE
+            "votes_needed_for_block": VOTES_PER_BLOCK
         }
     except Exception as e:
         print(f"Error en /add_vote: {str(e)}")
