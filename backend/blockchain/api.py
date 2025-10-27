@@ -148,7 +148,7 @@ def add_insert_block():
 
     if not mempool:
         print("Error: Intento de crear bloque con mempool vacía")
-        return
+        return False
     
     # Mensajes para ver como los añade
     print(f"Creando bloque con {len(mempool)} votos")
@@ -161,9 +161,11 @@ def add_insert_block():
         # Limpia la mempool y resetea el contador
         mempool.clear()
         print("Mempool limpiada.")
+        return True
 
     except Exception as e:
         print(f"ERROR CRÍTICO al crear bloque desde mempool: {str(e)}")
+        return False
     
 # Endpoints 
 @app.post("/add_vote")
@@ -173,18 +175,25 @@ async def add_vote_endpoint(vote: dict):
     try:
         # Añadir el voto a la mempool
         mempool.append(vote)
-        print(f"Voto añadido a la mempool. Tamaño actual: {len(mempool)}")
+        print(f"Voto añadido a la mempool. Tamaño actual: {len(mempool)/VOTES_PER_BLOCK}")
+
+        block_created = False # Para manejar el caso en el que queden votos en la mempool
 
         # Compruebar si hemos alcanzado el límite
         if len(mempool) >= VOTES_PER_BLOCK:
             add_insert_block() # Llama a la función para crear el bloque
 
-        # Devolver una respuesta indicando que el voto está pendiente
-        return {
+        response = {
             "message": "Voto recibido y añadido a la mempool",
             "mempool_size": len(mempool),
+            "block_created_bool": block_created,
             "votes_needed_for_block": VOTES_PER_BLOCK
         }
+
+        # Si se crea bloque se añade el index
+        if block_created:
+            response["new_block_index"] = blockchain.read_last_block().index
+            
     except Exception as e:
         print(f"Error en /add_vote: {str(e)}")
         return {"error": "Error interno al procesar el voto"}, 500
@@ -206,7 +215,9 @@ async def save_chain():
         
         print(f"Blockchain guardada en: {file_path_abs}")
         return {"message": f"Blockchain encriptada y guardada en {file_path_abs}"}
+        
     except Exception as e:
+        
         print(f"Error en /save_chain_encrypted: {str(e)}")
         return {"error": str(e)}, 500
 
