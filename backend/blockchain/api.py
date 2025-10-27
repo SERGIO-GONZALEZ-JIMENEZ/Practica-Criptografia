@@ -175,13 +175,13 @@ async def add_vote_endpoint(vote: dict):
     try:
         # Añadir el voto a la mempool
         mempool.append(vote)
-        print(f"Voto añadido a la mempool. Tamaño actual: {len(mempool)/VOTES_PER_BLOCK}")
+        print(f"Voto añadido a la mempool. Tamaño actual: {len(mempool)} / {VOTES_PER_BLOCK}")
 
         block_created = False # Para manejar el caso en el que queden votos en la mempool
 
         # Compruebar si hemos alcanzado el límite
         if len(mempool) >= VOTES_PER_BLOCK:
-            add_insert_block() # Llama a la función para crear el bloque
+            block_created = add_insert_block() # Llama a la función para crear el bloque
 
         response = {
             "message": "Voto recibido y añadido a la mempool",
@@ -192,7 +192,11 @@ async def add_vote_endpoint(vote: dict):
 
         # Si se crea bloque se añade el index
         if block_created:
-            response["new_block_index"] = blockchain.read_last_block().index
+            last_block = blockchain.read_last_block()
+            if last_block: # Asegurarse de que no sea None
+                 response["new_block_index"] = last_block.index
+
+        return response
             
     except Exception as e:
         print(f"Error en /add_vote: {str(e)}")
@@ -226,5 +230,9 @@ async def save_chain():
 async def force_block_creation():
     if not mempool:
         return {"message": "Mempool vacía no se creó ningún bloque"}
-    add_insert_block()
-    return {"message": f"Bloque creado a la fuerza con {blockchain.read_last_block().index} bloques en total"}
+    block_created = add_insert_block()
+    
+    if block_created:
+        return {"message": f"Bloque creado forzosamente. Índice último bloque: {blockchain.read_last_block().index}."}
+    else:
+        return {"error": "Fallo al crear el bloque forzosamente."}, 500
