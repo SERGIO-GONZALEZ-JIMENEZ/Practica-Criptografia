@@ -47,7 +47,7 @@ Sigue estos pasos para configurar el proyecto en tu máquina local:
 3.  **Configurar Entorno Virtual de Python:**
     ```bash
     # En el caso que se use debian/ubuntu instalar python3-venv
-    apt install python3.12-venv
+    sudo apt install python3.12-venv
     # Crear el entorno virtual (si no existe)
     python3 -m venv .venv
     # Activar el entorno virtual
