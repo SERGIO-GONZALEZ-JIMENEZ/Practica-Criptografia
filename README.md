@@ -35,7 +35,7 @@ Sigue estos pasos para configurar el proyecto en tu máquina local:
 
 1.  **Clonar el Repositorio:**
     ```bash
-    git clone https://github.com/<USERNAME>/<REPO>.git
+    git clone https://github.com/SERGIO-GONZALEZ-JIMENEZ/Practica-Criptografia.git
     cd Practica-Criptografia
     ```
 
