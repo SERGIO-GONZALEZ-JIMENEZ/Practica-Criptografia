@@ -1,7 +1,7 @@
 import express from 'express'; // Framework para crear el servidor
 import cors from 'cors'; // Permite peticiones a un servidor desde otro dominio
 import jwt from 'jsonwebtoken';
-import fs from 'node:fs';
+import fs from 'fs';
 import bcrypt from 'bcrypt'; // Librería para hashear contraseñas
 import {createClient} from '@supabase/supabase-js'; // Cliente de supabase
 import {verificarTokenMiddleware} from './authMiddleware.mjs'; // Para verificar JWT
