@@ -74,7 +74,6 @@ Sigue estos pasos para configurar el proyecto en tu máquina local:
     # Para Windows (cmd)
     copy backend\server\.env.example backend\server\.env
     ```
-    * Edita `backend/server/.env` y añade tu clave **`service_role`** de Supabase.
     * Copia `backend/blockchain/.env.example` a `backend/blockchain/.env` (si lo creaste).
     ```bash
     # En macOS / Linux
@@ -86,7 +85,7 @@ Sigue estos pasos para configurar el proyecto en tu máquina local:
 
 6.  **Generar Claves Criptográficas:**
     * **Clave Maestra AES:** Ejecuta `python3 generate_key.py` en la raíz. Esto creará el archivo `master.key` (asegúrate de que esté en tu `.gitignore`). Si no funciona esto probar con esto dentro del .env `.\.venv\Scripts\python.exe generate_key.py`
-    * **Claves RSA (para JWT):** Si no has incluido `private.key` y `public.key` en la carpeta `backend/server/`, necesitas generarlas. Puedes usar `openssl`:
+    * **Claves RSA (para JWT):** Si no están incluidas `private.key` y `public.key` en la carpeta `backend/server/`, necesitas generarlas. Puedes usar `openssl`:
         ```bash
         # Generar clave privada RSA de 2048 bits. En caso de windows instalar antes openssl en git bash (si tiene git). Accede a la carpeta del repositorio y ejecuta los comandos
         openssl genrsa -out backend/server/private.key 2048
