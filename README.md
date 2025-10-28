@@ -74,7 +74,7 @@ Sigue estos pasos para configurar el proyecto en tu máquina local:
     # Para Windows (cmd)
     copy backend\server\.env.example backend\server\.env
     ```
-    * Copia `backend/blockchain/.env.example` a `backend/blockchain/.env` (si lo creaste).
+    * Copia `backend/blockchain/.env.example` a `backend/blockchain/.env`.
     ```bash
     # En macOS / Linux
     cp backend/blockchain/.env.example backend/blockchain/.env
