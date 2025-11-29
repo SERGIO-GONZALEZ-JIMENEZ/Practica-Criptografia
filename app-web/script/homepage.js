@@ -61,6 +61,13 @@ async function db_register(email, password) {
     }
 }
 
+function validarPassword(password) {
+    // Al menos 8 caracteres, una mayúscula, un número y un carácter especial
+    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    return regex.test(password);
+}
+
+
 $(document).ready(function () {
 
     console.log("JQuery y homepage.js cargados");
@@ -82,6 +89,11 @@ $(document).ready(function () {
 
         const name = $("#user").val().trim()
         const password = $("#password").val().trim()
+
+        if (!validarPassword(password)) {
+        alert("La contraseña debe tener mínimo 8 caracteres, una mayúscula, un número y un carácter especial.");
+        return;
+        }
 
         db_register(name, password);
     });
