@@ -319,15 +319,15 @@ app.post('/request-cert', async (req, res) => {
 
     // Ejecutar openssl ca en AC2 (esto requiere permisos y configuración)
     // Cambia ruta y config según tu AC2
-    const cmd = `cd /ruta/a/AC2 && openssl ca -config ./openssl_AC2.cnf -in ./solicitudes/req-${timestamp}.pem -notext -batch`;
+    const cmd = `cd ../../PKI/AC2 && openssl ca -config ./openssl_AC2.cnf -in ./solicitudes/req-${timestamp}.pem -notext -batch`;
     execSync(cmd, { stdio: 'inherit' });
 
     // openssl genera nuevoscerts/0X.pem -> copiar al servidor y devolverlo al cliente
     // Busca el último archivo creado en AC2/nuevoscerts
-    const nuevos = fs.readdirSync('/ruta/a/AC2/nuevoscerts').filter(f => f.endsWith('.pem'));
-    const latest = nuevos.map(f => ({f, t: fs.statSync(path.join('/ruta/a/AC2/nuevoscerts', f)).mtimeMs}))
+    const nuevos = fs.readdirSync('../../PKI/AC2/nuevoscerts').filter(f => f.endsWith('.pem'));
+    const latest = nuevos.map(f => ({f, t: fs.statSync(path.join('../../PKI/AC2/nuevoscerts', f)).mtimeMs}))
                        .sort((a,b)=>b.t-a.t)[0].f;
-    const cert = fs.readFileSync(path.join('/ruta/a/AC2/nuevoscerts', latest), 'utf8');
+    const cert = fs.readFileSync(path.join('../../PKI/AC2/nuevoscerts', latest), 'utf8');
 
     // Empaquetar como PKCS#12 si el usuario lo pide (requires openssl pkcs12 and pass)
     res.json({ cert });
