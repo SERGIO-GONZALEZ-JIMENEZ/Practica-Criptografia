@@ -7,7 +7,15 @@ import {fileURLToPath} from 'url';
 const __filename = fileURLToPath(import.meta.url); // Obtener dirección
 const __dirname = path.dirname(__filename) // Obtenemos directorio
 
-const clavePublica = fs.readFileSync(path.join(__dirname, 'public.key'), 'utf8'); 
+const rutaClavePublica = path.join(__dirname, 'public.key');
+
+let clavePublica;
+try {
+    clavePublica = fs.readFileSync(rutaClavePublica, 'utf8');
+} catch (error) {
+    console.error("FATAL: No se puede leer public.key en:", rutaClavePublica);
+    process.exit(1);
+}
 
 export const verificarTokenMiddleware = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -22,8 +30,13 @@ export const verificarTokenMiddleware = (req, res, next) => {
     jwt.verify(token, clavePublica, { algorithms: ['RS256'] }, (err, usuario) => {
         if (err) {
             // Mensajes log en caso de fallo
-            console.log("--- FALLO VERIFICACIÓN FIRMA DIGITAL ---");
-            console.log("Error: La firma no corresponde a la clave pública o el token expiró.");
+            console.error("--- ERROR JWT ---");
+            console.error("Nombre del error:", err.name); 
+            console.error("Mensaje:", err.message);
+            
+            if (err.message.includes('invalid signature')) {
+                console.error("PISTA: Tu private.key y public.key no son pareja.");
+            }
             return res.status(403).json({ error: 'Token no válido o expirado' });
         }
         // Mensajes de log en caso de acierto

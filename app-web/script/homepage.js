@@ -52,8 +52,10 @@ async function db_register(email, password) {
 
         // Successful registration
         console.log('Register successful:', data);
+        // Guardar token
+        localStorage.setItem('token', data.token);
         alert(data.message);
-        window.location.href = "vote.html";
+        return data;
 
     } catch (error) {
         console.error('Error durante el registro:', error.message);
@@ -67,8 +69,9 @@ function validarPassword(password) {
     return regex.test(password);
 }
 
-// TODO: Hay que llamar a esta función en el registro para generar el par de claves y el certificado
 async function genAndSendCSR(nombreUsuario) {
+
+  console.log("Generando claves y CSR para:", nombreUsuario);
   // Generar par de claves
   const keys = forge.pki.rsa.generateKeyPair({bits: 2048});
   const privatePem = forge.pki.privateKeyToPem(keys.privateKey);
@@ -76,8 +79,15 @@ async function genAndSendCSR(nombreUsuario) {
   // Crear CSR 
   const csr = forge.pki.createCertificationRequest();
   csr.publicKey = keys.publicKey;
+  const nombreLimpio = nombreUsuario.replace(/[^a-zA-Z0-9]/g, '');
+  const commonNameUnique = `${nombreLimpio}-${Date.now()}`;
+
+  console.log("Common Name generado:", commonNameUnique);
+
   csr.setSubject([
-    { name: 'commonName', value: nombreUsuario }
+    { name: 'commonName', value: commonNameUnique },
+    { name: 'countryName', value: 'ES' },
+    { name: 'organizationName', value: 'Civium' }
   ]);
   csr.sign(keys.privateKey, forge.md.sha256.create());
 
@@ -116,7 +126,7 @@ $(document).ready(function () {
         db_login(name, password);
     });
 
-    $('#register').on('click', function(e) {
+    $('#register').on('click', async function(e) {
         e.preventDefault();
         console.log("Botón register pulsado");
 
@@ -127,9 +137,23 @@ $(document).ready(function () {
         alert("La contraseña debe tener mínimo 8 caracteres, una mayúscula, un número y un carácter especial.");
         return;
         }
+        try {
+            await db_register(name, password);
 
-        db_register(name, password);
-        genAndSendCSR(name);
+            console.log("Solicitando el certificado...");
+            try {
+                await genAndSendCSR(name);
+                alert("Cuenta creada y certificado generado correctamente");
+            } catch (certError) {
+                console.error("Error en certificado:", certError);
+                alert("Cuenta creada, pero hubo un error con el certificado. Podrás entrar igual.");
+            }
+
+            
+        } catch(error) {
+            console.error("Error crítico:", error);
+            alert("Error: " + error.message);
+        }
 
     });
 });

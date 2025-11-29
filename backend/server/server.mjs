@@ -5,6 +5,7 @@ import fs from 'fs';
 import bcrypt from 'bcrypt'; // Librería para hashear contraseñas
 import {createClient} from '@supabase/supabase-js'; // Cliente de supabase
 import {verificarTokenMiddleware} from './authMiddleware.mjs'; // Para verificar JWT
+import {execSync} from 'child_process'; // Para hacer comando openssl
 
 // Cargamos ruta de los archivos y directorios para que no haya errores a la hora de iniciar el servidor
 import path from 'path'; // Para el tema de / en Mac o Linux y \ en Windows
@@ -63,17 +64,43 @@ app.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     // Guardar email y password hasheada en base de datos
-    let {data, error: insertError} = await supabase
+    let {data: nuevoUsuario, error: insertError} = await supabase
         // Inserción de SQL
         .from('user')
-        .insert([{email: email, password_hash: passwordHash}]);
+        .insert([{email: email, password_hash: passwordHash}])
+        .select()
+        .single();
     
     if (insertError) {
         // 500 Internal Server Error
         return res.status(500).json({error: 'Error al insertar en Supabase'});
     }
 
+    // Si nuevoUsuario sigue siendo null aquí, es que la inserción falló silenciosamente
+    if (!nuevoUsuario) {
+        return res.status(500).json({ error: "Error: El usuario se creó pero no se devolvieron datos." });
+    }
+
+    console.log("Generando token para ID:", nuevoUsuario.id);
+
+    // Crear token JWT
+    const usuarioPayload = {
+        id: nuevoUsuario.id,
+        email: nuevoUsuario.email
+    };
+
+    const token = jwt.sign(usuarioPayload, clavePrivada, {algorithm: 'RS256', expiresIn: '1h'});
+
     res.json({ message: 'Usuario registrado exitosamente' });
+
+    // Mensajes logs para el apartado 4
+    console.log("--- GENERACIÓN DE FIRMA DIGITAL (LOGIN) ---");
+    console.log("Algoritmo utilizado: RS256 (RSA + SHA256)");
+    console.log("Longitud de clave: 2048 bits"); 
+    console.log("Firma generada correctamente e incrustada en JWT.");
+
+    // Enviar token al cliente
+    return res.json({message: "Usuario registrado exitosamente", token: token});
 });
 
 // Login de usuario
@@ -225,7 +252,7 @@ app.post('/api/votar', verificarTokenMiddleware, async (req, res) => {
 
     } catch (err) {
         console.error('Error procesando el voto:', err.message);
-        res.status(500).json({ error: 'Error interno del servidor al procesar el voto' });
+        return res.status(500).json({ error: 'Error interno del servidor al procesar el voto' });
     }
 });
 
@@ -306,34 +333,55 @@ app.post('/api/finalize-election', verificarTokenMiddleware, async (req, res) =>
 
     } catch (err) {
         console.error('Error al finalizar la votación:', err.message);
-        res.status(500).json({ error: 'Error interno del servidor al finalizar la votación' });
+        return res.status(500).json({ error: 'Error interno del servidor al finalizar la votación' });
     }
-});
+}); 
 
 app.post('/request-cert', async (req, res) => {
   const { csr, name } = req.body;
   try {
     const timestamp = Date.now();
-    const csrPath = path.resolve('/ruta/a/AC2/solicitudes', `req-${timestamp}.pem`);
+    // Rutas para ejecutar el comando openssl
+    const ac2Dir = path.join(__dirname, '../../PKI/AC2');
+    const requestsDir = path.join(ac2Dir, 'requests');
+    const newCertsDir = path.join(ac2Dir, 'newcerts');
+
+    // Asegurar que la carpeta de solicitudes existe
+    if (!fs.existsSync(requestsDir)) {
+        fs.mkdirSync(requestsDir, { recursive: true });
+    }
+
+    const csrFilename = `req-${timestamp}.pem`;
+    const csrPath = path.join(requestsDir, csrFilename);
     fs.writeFileSync(csrPath, csr);
 
     // Ejecutar openssl ca en AC2 (esto requiere permisos y configuración)
     // Cambia ruta y config según tu AC2
-    const cmd = `cd ../../PKI/AC2 && openssl ca -config ./openssl_AC2.cnf -in ./solicitudes/req-${timestamp}.pem -notext -batch`;
-    execSync(cmd, { stdio: 'inherit' });
+    // Le pasamos la contraseña porque ES NECESARIO 
+    const passwordAC2 = 'p2cr25'
+    const cmd = `openssl ca -config ./openssl_AC2.cnf -in ./requests/${csrFilename} -notext -batch -passin pass:${passwordAC2}`;
+    console.log("Ejecutando comando:", cmd);
+    execSync(cmd, {
+        stdio: 'inherit',
+        cwd: ac2Dir
+    });
 
     // openssl genera nuevoscerts/0X.pem -> copiar al servidor y devolverlo al cliente
     // Busca el último archivo creado en AC2/nuevoscerts
-    const nuevos = fs.readdirSync('../../PKI/AC2/nuevoscerts').filter(f => f.endsWith('.pem'));
-    const latest = nuevos.map(f => ({f, t: fs.statSync(path.join('../../PKI/AC2/nuevoscerts', f)).mtimeMs}))
+    const nuevos = fs.readdirSync(newCertsDir).filter(f => f.endsWith('.pem'));
+    if (nuevos.length === 0) {
+        throw new Error("No se generó el certificado en newcerts");
+    }
+    const latest = nuevos.map(f => ({f, t: fs.statSync(path.join(newCertsDir, f)).mtimeMs}))
                        .sort((a,b)=>b.t-a.t)[0].f;
-    const cert = fs.readFileSync(path.join('../../PKI/AC2/nuevoscerts', latest), 'utf8');
+    console.log("Falla aquí");
+    const cert = fs.readFileSync(path.join(newCertsDir, latest), 'utf8');
 
     // Empaquetar como PKCS#12 si el usuario lo pide (requires openssl pkcs12 and pass)
     res.json({ cert });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'No se pudo emitir el certificado' });
+    console.error("Error en endpoint de certificado:", err);
+    return res.status(500).json({ error: 'No se pudo emitir el certificado', details: err.message });
   }
 });
 
