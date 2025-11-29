@@ -304,6 +304,33 @@ app.post('/api/finalize-election', verificarTokenMiddleware, async (req, res) =>
     }
 });
 
+app.post('/request-cert', async (req, res) => {
+  const { csr, name } = req.body;
+  try {
+    const timestamp = Date.now();
+    const csrPath = path.resolve('/ruta/a/AC2/solicitudes', `req-${timestamp}.pem`);
+    fs.writeFileSync(csrPath, csr);
+
+    // Ejecutar openssl ca en AC2 (esto requiere permisos y configuración)
+    // Cambia ruta y config según tu AC2
+    const cmd = `cd /ruta/a/AC2 && openssl ca -config ./openssl_AC2.cnf -in ./solicitudes/req-${timestamp}.pem -notext -batch`;
+    execSync(cmd, { stdio: 'inherit' });
+
+    // openssl genera nuevoscerts/0X.pem -> copiar al servidor y devolverlo al cliente
+    // Busca el último archivo creado en AC2/nuevoscerts
+    const nuevos = fs.readdirSync('/ruta/a/AC2/nuevoscerts').filter(f => f.endsWith('.pem'));
+    const latest = nuevos.map(f => ({f, t: fs.statSync(path.join('/ruta/a/AC2/nuevoscerts', f)).mtimeMs}))
+                       .sort((a,b)=>b.t-a.t)[0].f;
+    const cert = fs.readFileSync(path.join('/ruta/a/AC2/nuevoscerts', latest), 'utf8');
+
+    // Empaquetar como PKCS#12 si el usuario lo pide (requires openssl pkcs12 and pass)
+    res.json({ cert });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'No se pudo emitir el certificado' });
+  }
+});
+
 // Iniciar servidor
 const PORT = 3000;
 app.listen(PORT, () => {

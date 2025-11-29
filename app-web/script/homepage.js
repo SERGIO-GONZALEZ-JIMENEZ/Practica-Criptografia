@@ -67,6 +67,39 @@ function validarPassword(password) {
     return regex.test(password);
 }
 
+// TODO: Hay que llamar a esta función en el registro para generar el par de claves y el certificado
+async function genAndSendCSR(nombreUsuario) {
+  // Generar par de claves
+  const keys = forge.pki.rsa.generateKeyPair({bits: 2048});
+  const privatePem = forge.pki.privateKeyToPem(keys.privateKey);
+
+  // Crear CSR 
+  const csr = forge.pki.createCertificationRequest();
+  csr.publicKey = keys.publicKey;
+  csr.setSubject([
+    { name: 'commonName', value: nombreUsuario }
+  ]);
+  csr.sign(keys.privateKey, forge.md.sha256.create());
+
+  const csrPem = forge.pki.certificationRequestToPem(csr);
+
+  // Enviar el CSR al backend
+  const resp = await fetch('/request-cert', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ csr: csrPem, nombre: nombreUsuario })
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'Error solicitando certificado');
+
+  // Guardar clave privada y certificado en localStorage
+  localStorage.setItem("userPrivateKey", privatePem);
+  localStorage.setItem("userCert", data.cert);
+
+  return { privatePem, certPem: data.cert };
+}
+
 
 $(document).ready(function () {
 
@@ -96,5 +129,7 @@ $(document).ready(function () {
         }
 
         db_register(name, password);
+        genAndSendCSR(name);
+
     });
 });
