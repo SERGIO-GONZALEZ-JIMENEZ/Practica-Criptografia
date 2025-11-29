@@ -21,8 +21,16 @@ export const verificarTokenMiddleware = (req, res, next) => {
     // Comprobamos token usuario con clave pública de JWT
     jwt.verify(token, clavePublica, { algorithms: ['RS256'] }, (err, usuario) => {
         if (err) {
+            // Mensajes log en caso de fallo
+            console.log("--- FALLO VERIFICACIÓN FIRMA DIGITAL ---");
+            console.log("Error: La firma no corresponde a la clave pública o el token expiró.");
             return res.status(403).json({ error: 'Token no válido o expirado' });
         }
+        // Mensajes de log en caso de acierto
+        console.log("--- VERIFICACIÓN DE FIRMA DIGITAL ---");
+        console.log("Algoritmo: RS256");
+        console.log("Clave utilizada para verificar: RSA Pública (2048 bits)");
+        console.log("Resultado: FIRMA VÁLIDA. Integridad del mensaje asegurada.");
         req.usuario = usuario; // Añade los datos del usuario (id, email) a la petición
         next(); // Pasa al siguiente
     });
