@@ -108,6 +108,12 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign(usuarioPayload, clavePrivada, {algorithm: 'RS256', expiresIn: '1h'});
 
+    // Mensajes logs para el apartado 4
+    console.log("--- GENERACIÓN DE FIRMA DIGITAL (LOGIN) ---");
+    console.log("Algoritmo utilizado: RS256 (RSA + SHA256)");
+    console.log("Longitud de clave: 2048 bits"); 
+    console.log("Firma generada correctamente e incrustada en JWT.");
+
     // Enviar token al cliente
     res.json({token: token});
 });
