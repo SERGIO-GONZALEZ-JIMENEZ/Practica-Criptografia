@@ -80,27 +80,9 @@ app.post('/register', async (req, res) => {
     if (!nuevoUsuario) {
         return res.status(500).json({ error: "Error: El usuario se creó pero no se devolvieron datos." });
     }
-
-    console.log("Generando token para ID:", nuevoUsuario.id);
-
-    // Crear token JWT
-    const usuarioPayload = {
-        id: nuevoUsuario.id,
-        email: nuevoUsuario.email
-    };
-
-    const token = jwt.sign(usuarioPayload, clavePrivada, {algorithm: 'RS256', expiresIn: '1h'});
-
-    res.json({ message: 'Usuario registrado exitosamente' });
-
-    // Mensajes logs para el apartado 4
-    console.log("--- GENERACIÓN DE FIRMA DIGITAL (LOGIN) ---");
-    console.log("Algoritmo utilizado: RS256 (RSA + SHA256)");
-    console.log("Longitud de clave: 2048 bits"); 
-    console.log("Firma generada correctamente e incrustada en JWT.");
-
+    
     // Enviar token al cliente
-    return res.json({message: "Usuario registrado exitosamente", token: token});
+    return res.json({message: "Usuario registrado exitosamente"});
 });
 
 // Login de usuario
@@ -374,7 +356,6 @@ app.post('/request-cert', async (req, res) => {
     }
     const latest = nuevos.map(f => ({f, t: fs.statSync(path.join(newCertsDir, f)).mtimeMs}))
                        .sort((a,b)=>b.t-a.t)[0].f;
-    console.log("Falla aquí");
     const cert = fs.readFileSync(path.join(newCertsDir, latest), 'utf8');
 
     // Empaquetar como PKCS#12 si el usuario lo pide (requires openssl pkcs12 and pass)
